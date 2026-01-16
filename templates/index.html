@@ -1370,6 +1370,16 @@
             document.getElementById('intention').value = '';
             document.getElementById('cardInspiration').value = '';
             document.getElementById('interpretationBtn').disabled = true;
+            
+            // --- AJOUT : Réinitialisation du formulaire de la modal ---
+            document.getElementById('emailInput').value = '';
+            document.getElementById('firstnameInput').value = '';
+            document.getElementById('lastnameInput').value = '';
+            
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = false;
+            btn.innerText = "Recevoir le guide";
+            
             goToScreen(1);
         }
 
@@ -1380,6 +1390,11 @@
 
         function hideModal() {
             document.getElementById('modalOverlay').classList.remove('active');
+            
+            // On remet le bouton en état normal au cas où il était bloqué sur "Chargement"
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = false;
+            btn.innerText = "Recevoir le guide";
         }
 
         // Close modal on overlay click
