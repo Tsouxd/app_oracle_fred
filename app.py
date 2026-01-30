@@ -23,6 +23,7 @@ app.secret_key = secrets.token_hex(16)
 # --- GOOGLE SHEETS ---
 SHEET_NAME = "suivi_app_oracle"
 SHEET_VISITES_NAME = "stats_visites_oracle"
+GOOGLE_CREDS_ENV = os.environ.get("GOOGLE_CREDS_JSON")
 CREDENTIALS_FILE = "credentials.json"
 
 # --- SYSTEME.IO ---
@@ -75,12 +76,26 @@ def get_utms_from_request():
 
 def save_to_gsheets(data_row, target_sheet):
     try:
-        scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-        creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=scopes)
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+
+        # 🌍 PRIORITÉ À RENDER (variable d’environnement)
+        if GOOGLE_CREDS_ENV:
+            creds_dict = json.loads(GOOGLE_CREDS_ENV)
+            creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+            log("🔐 Auth Google Sheets via ENV (Render)")
+        else:
+            # 💻 MODE LOCAL (fichier credentials.json)
+            creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=scopes)
+            log("💻 Auth Google Sheets via fichier local")
+
         client = gspread.authorize(creds)
         sheet = client.open(target_sheet).sheet1
         sheet.append_row(data_row)
         return True
+
     except Exception as e:
         log(f"❌ Error Sheet {target_sheet}: {e}")
         return False
