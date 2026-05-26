@@ -6,7 +6,13 @@ from datetime import datetime
 from flask import Flask, request, jsonify, render_template, session
 import requests
 import secrets
+from dotenv import load_dotenv # <-- IMPORT POUR LE .ENV
 from database import get_db_connection # <-- Import de votre database.py
+
+# ==========================================
+# CHARGEMENT DU FICHIER .ENV
+# ==========================================
+load_dotenv()
 
 # ==========================================
 # IMPORT GOOGLE SHEETS
@@ -15,26 +21,27 @@ import gspread
 from google.oauth2.service_account import Credentials
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(16)
+# Utilise la clé du .env ou en génère une aléatoire par défaut
+app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(16))
 
 # ==========================================
 # CONFIGURATION
 # ==========================================
 # --- GOOGLE SHEETS ---
-SHEET_NAME = "suivi_app_oracle"
-SHEET_VISITES_NAME = "stats_visites_oracle"
+SHEET_NAME = os.environ.get("SHEET_NAME", "suivi_app_oracle")
+SHEET_VISITES_NAME = os.environ.get("SHEET_VISITES_NAME", "stats_visites_oracle")
 GOOGLE_CREDS_ENV = os.environ.get("GOOGLE_CREDS_JSON")
-CREDENTIALS_FILE = "credentials.json"
+CREDENTIALS_FILE = os.environ.get("CREDENTIALS_FILE", "credentials.json")
 
 # --- SYSTEME.IO ---
-SIO_API_KEY = "tngtaps6mg2bx9qbmzhkp8ck2uxgafc17fimyce6l1ys8tebg08twqug09ton0xd"
-SIO_TAG_ID = 1825340 
+SIO_API_KEY = os.environ.get("SIO_API_KEY")
+SIO_TAG_ID = int(os.environ.get("SIO_TAG_ID", 1825340)) 
 HEADERS_SIO = {"X-API-Key": SIO_API_KEY, "Content-Type": "application/json"}
 
 # --- LEARNYBOX ---
-# LB_API_KEY = "_DBmFbvkcdCukhazdwagokifthFGbEnFa"
-# LB_BASE_URL = "https://formation-elearning.learnybox.com/api/v2"
-# LB_SEQUENCE_ID = 280252 
+# LB_API_KEY = os.environ.get("LB_API_KEY")
+# LB_BASE_URL = os.environ.get("LB_BASE_URL", "https://formation-elearning.learnybox.com/api/v2")
+# LB_SEQUENCE_ID = int(os.environ.get("LB_SEQUENCE_ID", 280252)) if os.environ.get("LB_SEQUENCE_ID") else 280252
 # LB_TOKEN_CACHE = {"access_token": None, "expires_at": 0}
 
 # ==========================================
@@ -70,7 +77,7 @@ def get_utms_from_request():
 #             LB_TOKEN_CACHE["access_token"] = data["data"]["access_token"]
 #             LB_TOKEN_CACHE["expires_at"] = now + int(data["data"]["expires_in"])
 #             return LB_TOKEN_CACHE["access_token"]
-#     except Exception as e: log(f"❌ LB Token: {e}")
+#     except Exception as e: log(f"LB Token: {e}")
 #     return None
 # ==========================================
 
@@ -81,15 +88,15 @@ def save_to_gsheets(data_row, target_sheet):
             "https://www.googleapis.com/auth/drive"
         ]
 
-        # 🌍 PRIORITÉ À RENDER (variable d’environnement)
+        # PRIORITÉ À RENDER (variable d’environnement)
         if GOOGLE_CREDS_ENV:
             creds_dict = json.loads(GOOGLE_CREDS_ENV)
             creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
-            log("🔐 Auth Google Sheets via ENV (Render)")
+            log("Auth Google Sheets via ENV (Render)")
         else:
-            # 💻 MODE LOCAL (fichier credentials.json)
+            # MODE LOCAL (fichier credentials.json)
             creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=scopes)
-            log("💻 Auth Google Sheets via fichier local")
+            log("Auth Google Sheets via fichier local")
 
         client = gspread.authorize(creds)
         sheet = client.open(target_sheet).sheet1
@@ -97,11 +104,11 @@ def save_to_gsheets(data_row, target_sheet):
         return True
 
     except Exception as e:
-        log(f"❌ Error Sheet {target_sheet}: {e}")
+        log(f"Error Sheet {target_sheet}: {e}")
         return False
 
 # ==========================================
-# 📌 ROUTES
+# ROUTES
 # ==========================================
 
 @app.route('/')
@@ -171,7 +178,7 @@ def subscribe():
                     VALUES (%s, %s, %s, %s, %s)
                 """, (f"{firstname} {lastname}", email, "Inscription Oracle", utms.get('utm_source'), utms.get('utm_campaign')))
                 conn.commit()
-                log("📝 Postgres : Enregistré dans 'resultats_oracle'")
+                log("Postgres : Enregistré dans 'resultats_oracle'")
             except Exception as e: log(f"❌ Postgres Oracle Error: {e}")
             finally: conn.close()
 

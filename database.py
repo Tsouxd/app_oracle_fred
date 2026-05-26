@@ -17,7 +17,7 @@ def get_db_connection():
                 cursor_factory=RealDictCursor,
                 sslmode='require' # Souvent nécessaire pour les connexions distantes sécurisées
             )
-            print("✅ [DB] Connexion Render (URL) OK")
+            print("[DB] Connexion Render (URL) OK")
         else:
             # CAS LOCAL (Tes champs séparés)
             conn = psycopg2.connect(
@@ -28,10 +28,10 @@ def get_db_connection():
                 port=os.getenv("DB_PORT", 5432),
                 cursor_factory=RealDictCursor
             )
-            print("✅ [DB] Connexion Locale (Champs) OK")
+            print("[DB] Connexion Locale (Champs) OK")
 
         return conn
 
     except Exception as e:
-        print("❌ [DB] ERREUR Connexion :", e)
+        print("[DB] ERREUR Connexion :", e)
         return None
